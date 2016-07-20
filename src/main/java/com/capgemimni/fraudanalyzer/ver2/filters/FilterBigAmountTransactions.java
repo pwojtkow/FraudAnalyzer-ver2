@@ -27,9 +27,6 @@ public class FilterBigAmountTransactions extends FilterManager {
 				}
 			}
 		}
-		for (int i = 0; i <= suspiciousClientIdList.size(); i++) {
-			transactionsMap.removeAll(suspiciousClientIdList.get(i));
-		}
 		return suspiciousClientIdList;
 	}
 

@@ -23,6 +23,14 @@ public class Transaction {
 		this.date = date;
 	}
 	
+	Transaction(TransactionBuilder builder) {
+		id=builder.id;
+		senderId=builder.senderId;
+		recipientId=builder.recipientId;
+		moneyAmount=builder.moneyAmount;
+		date=builder.date;
+		}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
