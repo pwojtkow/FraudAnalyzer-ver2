@@ -7,13 +7,13 @@ import com.capgemimni.fraudanalyzer.ver2.FilterManager;
 import com.capgemimni.fraudanalyzer.ver2.Transaction;
 import com.google.common.collect.Multimap;
 
-public class FilterSmallAmountTransactions extends FilterManager {
+public class FilterSmallAmountTransactions implements FilterManager {
 
 	private static final int TRANSACION_QUANTITY_LIMIT_PER_DAY = 3;
 	private static final int MONEY_TRANSFER_LIMIT_PER_DAY = 5000;
 
 	@Override
-	public List<Transaction> filter(Multimap<Integer, Transaction> transactionsMap, DateTime date) {
+	public List<Transaction> filter(Multimap<Integer, Transaction> transactionsMap) {
 		List<Transaction> suspiciousClientIdList = new ArrayList<Transaction>();
 		int numberOfTransactions = 0;
 		int sumOfTransactions = 0;

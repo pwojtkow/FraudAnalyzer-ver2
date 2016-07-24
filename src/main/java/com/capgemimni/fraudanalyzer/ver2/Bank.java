@@ -1,5 +1,6 @@
 package com.capgemimni.fraudanalyzer.ver2;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -9,7 +10,6 @@ import com.capgemimni.fraudanalyzer.ver2.filters.FilterBigAmountTransactions;
 import com.capgemimni.fraudanalyzer.ver2.filters.FilterByUserID;
 import com.capgemimni.fraudanalyzer.ver2.filters.FilterFrequentTransactions;
 import com.capgemimni.fraudanalyzer.ver2.filters.FilterFrequentTransactionsToOne;
-import com.capgemimni.fraudanalyzer.ver2.filters.FilterIgnoredTransactions;
 import com.capgemimni.fraudanalyzer.ver2.filters.FilterSmallAmountTransactions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -21,46 +21,55 @@ public class Bank implements FraudAnalyzer {
 	private Multimap<Integer, Transaction> transactionsMap = ArrayListMultimap.create();
 	
 	public List<Transaction> analyze(List<Transaction> transactionsList, DateTime date) {
+		suspiciousTransactions = new ArrayList<Transaction>();
 		List<Transaction> correctDateTransactionsList = filterByDate(transactionsList, date);
 		putListIntoMap(correctDateTransactionsList, transactionsMap);
-		useFilters(date, transactionsMap);
+		
+		removeIgnoredTransactions(transactionsMap);
+		
+		useFilters(transactionsMap);
+		
 		return suspiciousTransactions;
 	}
-	
-	private void useFilters(DateTime date, Multimap<Integer, Transaction> transactionsMap) {
-		int counter = 0;
 
-		while (filterManager != null) {
+		public void removeIgnoredTransactions(Multimap<Integer, Transaction> transactionsMap) {
+			
+			final int FIRST_IGNORED_CLIENT_ID = 101;
+			final int SECOND_IGNORED_CLIENT_ID = 606;
+			
+			if (transactionsMap.containsKey(FIRST_IGNORED_CLIENT_ID)) {
+				transactionsMap.removeAll(FIRST_IGNORED_CLIENT_ID);
+			}
+			if (transactionsMap.containsKey(SECOND_IGNORED_CLIENT_ID)) {
+				transactionsMap.removeAll(SECOND_IGNORED_CLIENT_ID);
+			}
+		}
+	
+	private void useFilters(Multimap<Integer, Transaction> transactionsMap) {
+		int counter = 0;
+		int numberOfFilters = 5;
+		
+		while (counter < numberOfFilters) {
 			if (counter == 0) {
-				filterManager = new FilterIgnoredTransactions();
-			} else if (counter == 1) {
 				filterManager = new FilterByUserID();
-			} else if (counter == 2) {
+			} else if (counter == 1) {
 				filterManager = new FilterSmallAmountTransactions();
-			} else if (counter == 3) {
+			} else if (counter == 2) {
 				filterManager = new FilterBigAmountTransactions();
-			} else if (counter == 4) {
+			} else if (counter == 3) {
 				filterManager = new FilterFrequentTransactionsToOne();
-			} else if (counter == 5) {
+			} else if (counter == 4) {
 				filterManager = new FilterFrequentTransactions();
 			} else {
 				filterManager = null;
 			}
-			addSuspiciousTransactionToList(date, transactionsMap);
+			
+			suspiciousTransactions.addAll(filterManager.filter(transactionsMap));
 			counter++;
 		}
 	}
 
-	private boolean addSuspiciousTransactionToList(DateTime date, Multimap<Integer, Transaction> transactionsMap) {
-		return suspiciousTransactions.addAll(filterManager.filter(transactionsMap, date));
-	}
-
-	/**
-	 * @param ignoredCliendIdList
-	 * @param transactionsMap
-	 *            where key is a senderID, and value is a Transaction
-	 */
-	public void putListIntoMap(List<Transaction> ignoredCliendIdList, Multimap<Integer, Transaction> transactionsMap) {
+	private void putListIntoMap(List<Transaction> ignoredCliendIdList, Multimap<Integer, Transaction> transactionsMap) {
 		Integer serdnerId;
 		for (int i = 0; i < ignoredCliendIdList.size(); i++) {
 			serdnerId = ignoredCliendIdList.get(i).getSenderId();
@@ -68,10 +77,9 @@ public class Bank implements FraudAnalyzer {
 		}
 	}
 
-	public List<Transaction> filterByDate(List<Transaction> transactionsList, DateTime date) {
+	private List<Transaction> filterByDate(List<Transaction> transactionsList, DateTime date) {
 		List<Transaction> correctDateTransactionList;
-
-		// filter transaction list to date given as a method argument
+		
 		correctDateTransactionList = transactionsList.stream().filter(t -> t.getDate().toLocalDate().compareTo(date.toLocalDate()) == 0)
 				.collect(Collectors.toList());
 		return correctDateTransactionList;
